@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/navyamani-ch/Account-Management/internal/services"
 )
@@ -34,7 +36,8 @@ func (h *transactionsHandler) CreateTransaction(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancelFunc := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancelFunc()
 
 	payload := &services.TransactionCreatePayload{
 		SourceAccountID:      transactionPay.SourceAccountID,
@@ -52,7 +55,7 @@ func (h *transactionsHandler) CreateTransaction(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 
 	_ = json.NewEncoder(w).Encode(map[string]string{
 		"response": "Transaction Successfully completed",

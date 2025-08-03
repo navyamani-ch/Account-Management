@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -41,7 +43,8 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancelFunc := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancelFunc()
 
 	payload := &services.AccountCreatePayload{
 		AccountID:      acc.AccountID,
@@ -58,7 +61,7 @@ func (h *AccountHandler) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *AccountHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +79,8 @@ func (h *AccountHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancelFunc := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancelFunc()
 
 	acc, err := h.service.Read(ctx, accountID)
 	if err != nil {

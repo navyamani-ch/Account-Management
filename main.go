@@ -31,7 +31,7 @@ func main() {
 	transactionStore := stores.NewTransactionStore(db)
 
 	accountService := services.NewAccountService(accountStore)
-	transactionService := services.NewTransactionService(transactionStore, accountService)
+	transactionService := services.NewTransactionService(transactionStore, accountStore)
 
 	accountHandler := handlers.NewAccountHandler(accountService)
 	trnsactionHandler := handlers.NewTransactionHandler(transactionService)
@@ -74,7 +74,8 @@ func runMigrations() *sql.DB {
 	if err != nil {
 		log.Fatalf("Failed to ping DB: %v", err)
 	}
-	fmt.Println("Connected to PostgreSQL")
+
+	log.Println("Connected to PostgreSQL")
 
 	// Initialize the migrate PostgreSQL driver
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -103,12 +104,12 @@ func runMigrations() *sql.DB {
 	err = m.Up()
 	if err != nil {
 		if err == migrate.ErrNoChange {
-			fmt.Println("No new migrations to apply.")
+			log.Println("No new migrations to apply.")
 		} else {
 			log.Fatalf("Migration failed: %v", err)
 		}
 	} else {
-		fmt.Println("Database migrated successfully.")
+		log.Println("Database migrated successfully.")
 	}
 
 	return db

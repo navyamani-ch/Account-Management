@@ -9,12 +9,12 @@ import (
 )
 
 type transactionService struct {
-	accountService AccountService
-	store          stores.TransactionStore
+	accountStore stores.AccountStore
+	store        stores.TransactionStore
 }
 
-func NewTransactionService(store stores.TransactionStore, accountService AccountService) *transactionService {
-	return &transactionService{store: store, accountService: accountService}
+func NewTransactionService(store stores.TransactionStore, accountStore stores.AccountStore) *transactionService {
+	return &transactionService{store: store, accountStore: accountStore}
 }
 
 type TransactionCreatePayload struct {
@@ -28,34 +28,37 @@ type TransactionService interface {
 }
 
 func (t *transactionService) Create(ctx context.Context, payload *TransactionCreatePayload) error {
-	if payload.SourceAccountID < 0 {
+	if payload.SourceAccountID < 1 {
 		return errors.New("invalid sourceAccountID")
 	}
 
-	if payload.DestinationAccountID < 0 {
+	if payload.DestinationAccountID < 1 {
 		return errors.New("invalid destinationAccountID")
 	}
 
 	amount, err := strconv.ParseFloat(payload.Amount, 64)
 	if err != nil || amount < 1 {
-		return errors.New("invalid initialBalance")
+		return errors.New("invalid amount")
 	}
 
-	// Fetch source account details
-	sourceAccountDetails, err := t.accountService.Read(ctx, payload.SourceAccountID)
+	// Fetch source and destination account details
+	accountDetails, err := t.accountStore.GetAccounts(ctx, []int{payload.SourceAccountID,
+		payload.DestinationAccountID})
 	if err != nil {
-		return errors.New("error while getting sourceAccountDetails")
+		return errors.New("error while getting sourceAccountDetails and destinationDetails")
 	}
 
-	// Check if the source account has enough balance
-	if sourceAccountDetails.Balance < amount {
-		return errors.New("error while getting destinationAccountDetails")
+	if len(accountDetails) < 2 {
+		return errors.New("sourceAccount or destinationAccount details not exist")
 	}
 
-	// Check if destination account exists
-	_, err = t.accountService.Read(ctx, payload.DestinationAccountID)
-	if err != nil {
-		return err
+	for i := range accountDetails {
+		if accountDetails[i].AccountID == payload.SourceAccountID {
+			// Check if the source account has enough balance
+			if accountDetails[i].Balance < amount {
+				return errors.New("insufficient balance")
+			}
+		}
 	}
 
 	// Create a new transaction record
@@ -63,26 +66,6 @@ func (t *transactionService) Create(ctx context.Context, payload *TransactionCre
 		SourceAccountID:      payload.SourceAccountID,
 		DestinationAccountID: payload.DestinationAccountID,
 		Amount:               amount,
-	})
-	if err != nil {
-		return err
-	}
-
-	// Debit amount from source account
-	err = t.accountService.Update(ctx, &AccountUpdatePayload{
-		AccountID:       payload.SourceAccountID,
-		Amount:          amount,
-		TransactionType: "DEBIT",
-	})
-	if err != nil {
-		return err
-	}
-
-	// Credit amount to destination account
-	err = t.accountService.Update(ctx, &AccountUpdatePayload{
-		AccountID:       payload.DestinationAccountID,
-		Amount:          amount,
-		TransactionType: "CREDIT",
 	})
 	if err != nil {
 		return err

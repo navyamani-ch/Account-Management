@@ -52,18 +52,20 @@ A basic account and transaction management microservice built using **Go** and *
   ```sql
   CREATE ROLE root WITH LOGIN PASSWORD 'password';
   ALTER ROLE root CREATEDB;
-  \q;
   CREATE account_service DATABASE;
 
 ---
 
-### Run the Application
-- Account-Management
+### Build and start the containers:
+- install docker compose
   ```bash
-   go run main.go
+  brew install docker-compose
+
+- build command
+  ```bash
+  docker-compose up --build
   
 -The service will be running at: http://localhost:8080
-
 
 ## Use curl or Postman:
 
@@ -84,7 +86,7 @@ A basic account and transaction management microservice built using **Go** and *
   ```bash
   curl http://localhost:8080/accounts/123
 
-### 📊 POST Transaction
+### ➕ POST Transaction
 - POST /transactions
 
   ```bash

@@ -35,7 +35,6 @@ type AccountUpdatePayload struct {
 type AccountService interface {
 	Read(ctx context.Context, id int) (*AccountDetails, error)
 	Create(ctx context.Context, payload *AccountCreatePayload) error
-	Update(ctx context.Context, payload *AccountUpdatePayload) error
 }
 
 func (a *accountsService) Read(ctx context.Context, id int) (*AccountDetails, error) {
@@ -54,7 +53,7 @@ func (a *accountsService) Create(ctx context.Context, payload *AccountCreatePayl
 		return errors.New("accountID is missing")
 	}
 
-	if payload.AccountID < 0 {
+	if payload.AccountID < 1 {
 		return errors.New("invalid accountID")
 	}
 
@@ -72,40 +71,6 @@ func (a *accountsService) Create(ctx context.Context, payload *AccountCreatePayl
 		AccountID: payload.AccountID,
 		Amount:    initialBalance,
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (a *accountsService) Update(ctx context.Context, payload *AccountUpdatePayload) error {
-	if payload.AccountID < 0 {
-		return errors.New("invalid accountID")
-	}
-
-	if !(payload.TransactionType == "CREDIT" || payload.TransactionType == "DEBIT") {
-		return errors.New("invalid transactionType")
-	}
-
-	accountDetails, err := a.Read(ctx, payload.AccountID)
-	if err != nil {
-		return err
-	}
-
-	var amount float64
-
-	if payload.TransactionType == "DEBIT" {
-		if payload.Amount > accountDetails.Balance {
-			return errors.New("insufficient balance")
-		}
-
-		amount = accountDetails.Balance - payload.Amount
-	} else {
-		amount = accountDetails.Balance + payload.Amount
-	}
-
-	err = a.store.Update(ctx, &stores.AccountPayload{AccountID: payload.AccountID, Amount: amount})
 	if err != nil {
 		return err
 	}
