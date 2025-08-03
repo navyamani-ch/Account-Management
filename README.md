@@ -1,7 +1,3 @@
-
-markdown
-Copy
-Edit
 # 💳 Account Management Service
 
 A basic account and transaction management microservice built using **Go** and **PostgreSQL**.
